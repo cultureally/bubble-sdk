@@ -10,7 +10,7 @@ class User extends BubbleDataType {
 }
 
 (async () => {
-  BubbleConfig.update({
+  BubbleConfig.set({
     app: "cultureallyapp",
     appVersion: "version-test",
     apiKey: "123",

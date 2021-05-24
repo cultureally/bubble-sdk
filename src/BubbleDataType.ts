@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from "../node_modules/axios/index";
+import axios, { AxiosResponse } from "axios";
 import BubbleConfig from "./BubbleConfig";
 import { BaseDataType, SearchConfig } from "./types/search";
 import {
@@ -8,6 +8,7 @@ import {
 } from "./types/responses";
 
 export default abstract class BubbleDataType implements BaseDataType {
+  // Default fields provided by Bubble
   "Created Date": string;
   "Created By": string;
   "Modified Date": string;
@@ -25,7 +26,8 @@ export default abstract class BubbleDataType implements BaseDataType {
     this: CustomDataClass<T>,
     id: string
   ): Promise<T> {
-    const { objectUrl, headers } = new this({});
+    const { objectUrl } = new this({});
+    const { headers } = BubbleConfig;
     const res: AxiosResponse<GetByIDResponse> = await axios.get(
       `${objectUrl}/${id}`,
       { headers }
@@ -39,7 +41,9 @@ export default abstract class BubbleDataType implements BaseDataType {
     this: CustomDataClass<T>,
     data: CustomFields<T>
   ): Promise<string> {
-    const { objectUrl, headers } = new this({});
+    const { objectUrl } = new this({});
+    const { headers } = BubbleConfig;
+
     const res: AxiosResponse<CreateResponse> = await axios.post(
       `${objectUrl}/`,
       data,
@@ -57,7 +61,9 @@ export default abstract class BubbleDataType implements BaseDataType {
     this: CustomDataClass<T>,
     config: SearchConfig<T> = {}
   ): Promise<SearchResponse<T>["response"]> {
-    const { objectUrl, headers } = new this({});
+    const { objectUrl } = new this({});
+    const { headers } = BubbleConfig;
+
     const res: AxiosResponse<SearchResponse<T>> = await axios.get(objectUrl, {
       headers,
       params: {
@@ -70,7 +76,10 @@ export default abstract class BubbleDataType implements BaseDataType {
     if (!res.data?.response) {
       throw new Error("search request failed");
     }
-    return res.data.response;
+    return {
+      ...res.data.response,
+      results: res.data.response.results.map((r) => new this(r)),
+    };
   }
 
   /** Page through all bubble API results to get all objects matching constraints */
@@ -104,7 +113,8 @@ export default abstract class BubbleDataType implements BaseDataType {
   }
 
   async save(): Promise<void> {
-    const { objectUrl, headers } = this;
+    const { objectUrl } = this;
+    const { headers } = BubbleConfig;
     if (!this._id) {
       throw new Error(
         "Cannot call save on a BubbleDataType without an _id value."
@@ -115,17 +125,8 @@ export default abstract class BubbleDataType implements BaseDataType {
     });
   }
 
-  private get headers() {
-    const { apiKey } = BubbleConfig.get();
-    return {
-      Authorization: `Bearer ${apiKey}`,
-    };
-  }
-
   private get objectUrl(): string {
-    const { app, appVersion } = BubbleConfig.get();
-    const versionPart = appVersion ? `/${appVersion}` : "";
-    return `https://${app}.bubbleapps.io${versionPart}/api/1.1/obj/${this.type}`;
+    return `${BubbleConfig.baseUrl}/obj/${this.type}`;
   }
 }
 
