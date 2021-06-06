@@ -1,15 +1,17 @@
 # bubble-sdk
 
-This package provides a type-safe wrapper around the Bubble Data API.
+A TypeScript wrapper around the [Bubble Data API](https://manual.bubble.io/core-resources/api/data-api).
 
 ## Usage
 
-### Configure
-
 First, you will need to provide your `app` and `apiKey` from Bubble.
 
+Make sure to follow [Bubble's documentation for "Activating the API" and "Setting up the GET/DATA API"](https://manual.bubble.io/help-guides/the-bubble-api/defining-the-api).
+
 ```ts
-BubbleConfig.set({
+import BubbleSDK from "bubble-sdk";
+
+BubbleSDK.init({
   app: "your-app-name",
   apiKey: "your-bubble-api-key",
 });
@@ -20,7 +22,7 @@ BubbleConfig.set({
 Then you can create a class for each Data type in Bubble. You **must** define the `type`. This `type` is the name of the type as it appears in the URL when making requests to Bubble.
 
 ```ts
-class User extends BubbleDataType {
+class User extends BubbleSDK.DataType {
   // The name of the type in Bubble.
   type = "user";
 
@@ -67,13 +69,13 @@ const users: User[] = await User.getAll(/** Accepts search options */);
 
 ### Create and update
 
-Create a new object:
+Creating a new object returns the ID of the created object.
 
 ```ts
 const userID: string = await User.create({ email: "..." });
 ```
 
-Update an object by calling .save()
+Update an object by calling `.save()`
 
 ```ts
 const user: User = await User.getByID("123");

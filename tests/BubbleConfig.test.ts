@@ -1,6 +1,5 @@
 import { ulid } from "ulid";
-import { BubbleConfig } from "../src";
-import { NotIntializedError } from "../src/BubbleConfig";
+import BubbleConfig, { NotIntializedError } from "../src/BubbleConfig";
 
 describe("BubbleConfig", () => {
   beforeEach(() => BubbleConfig.reset());

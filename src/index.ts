@@ -1,4 +1,9 @@
 import BubbleConfig from "./BubbleConfig";
 import BubbleDataType from "./BubbleDataType";
 
-export { BubbleDataType, BubbleConfig };
+const BubbleSDK = {
+    init: BubbleConfig.set,
+    DataType: BubbleDataType
+}
+
+export default BubbleSDK
