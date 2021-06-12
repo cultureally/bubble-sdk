@@ -31,7 +31,9 @@ describe("create", () => {
     });
 
     const got = await User.create({ email });
-    expect(got).toEqual(_id);
+    expect(got).toBeInstanceOf(User);
+    expect(got._id).toBe(_id);
+    expect(got.email).toBe(email);
 
     const { app, apiKey } = BubbleConfig.get();
     expect(postSpy).toHaveBeenCalledTimes(1);

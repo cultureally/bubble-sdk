@@ -1,7 +1,6 @@
-import BubbleConfig from "../src/BubbleConfig";
-import { BubbleDataType } from "../src/index";
+import BubbleSDK from "../src/index";
 
-class User extends BubbleDataType {
+class User extends BubbleSDK.DataType {
   type = "user";
 
   email: string;
@@ -10,19 +9,17 @@ class User extends BubbleDataType {
 }
 
 (async () => {
-  BubbleConfig.set({
+  BubbleSDK.init({
     app: "cultureallyapp",
     appVersion: "version-test",
     apiKey: "123",
   });
 
-  const newUserID = await User.create({
+  const newUser = await User.create({
     email: "test@test.com",
     first_name: "asdf",
     last_name: "asdf",
   });
-
-  const newUser = await User.getByID(newUserID);
 
   newUser.email = "my_new@email.com";
   await newUser.save();

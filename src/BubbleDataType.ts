@@ -40,7 +40,7 @@ export default abstract class BubbleDataType implements BaseDataType {
   static async create<T extends BubbleDataType>(
     this: CustomDataClass<T>,
     data: CustomFields<T>
-  ): Promise<string> {
+  ): Promise<T> {
     const { objectUrl } = new this({});
     const { headers } = BubbleConfig;
 
@@ -53,7 +53,10 @@ export default abstract class BubbleDataType implements BaseDataType {
     if (res.data.status !== "success" || !res.data.id) {
       throw new Error(`create request failed with status: ${res.data.status}`);
     }
-    return res.data.id;
+    return new this({
+      _id: res.data.id,
+      ...data,
+    });
   }
 
   /** Search all objects of the type */
@@ -78,7 +81,9 @@ export default abstract class BubbleDataType implements BaseDataType {
     }
     return {
       ...res.data.response,
-      results: res.data.response.results.map((r) => new this(r)),
+      results: res.data.response.results.map(
+        (r) => new this(r as Record<string, unknown>)
+      ),
     };
   }
 
@@ -130,6 +135,11 @@ export default abstract class BubbleDataType implements BaseDataType {
   }
 }
 
-type CustomDataClass<T extends BubbleDataType> = new (args: Partial<T>) => T;
+export type CustomDataClass<T extends BubbleDataType> = new (
+  args: Record<string, unknown>
+) => T;
 
-type CustomFields<T extends BubbleDataType> = Omit<T, keyof BubbleDataType>;
+export type CustomFields<T extends BubbleDataType> = Omit<
+  T,
+  keyof BubbleDataType
+>;

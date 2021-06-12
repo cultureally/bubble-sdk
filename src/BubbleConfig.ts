@@ -8,7 +8,7 @@ export class NotIntializedError extends Error {
     "Must initialize bubble-sdk with BubbleConfig.set before you make any API requests.";
 }
 
-interface IBubbleConfig {
+export interface IBubbleConfig {
   app: string;
   appVersion?: string;
   apiKey: string;

@@ -1,12 +1,14 @@
 {
-  "name": "bubble-sdk",
-  "version": "0.0.1",
-  "description": "SDK for type-safe requests to the bubble.io Data API",
-  "main": "index.ts",
+  "name": "bubbleio-sdk",
+  "version": "0.0.3",
+  "description": "TypeScript SDK for the bubble.io Data API",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "tsc"
   },
-  "author": "Cameron Perry <cam.perry82@gmail.com>",
+  "author": "Cameron Perry <cameron@cultureally.com>",
   "license": "MIT",
   "devDependencies": {
     "@types/axios": "^0.14.0",
