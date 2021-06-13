@@ -20,42 +20,39 @@ export interface IBubbleConfig {
 type SetConfig = Pick<IBubbleConfig, "app" | "appVersion" | "apiKey"> &
   Partial<Pick<IBubbleConfig, "domain" | "apiVersion">>;
 
-class BubbleConfigManager {
-  config: IBubbleConfig | null = null;
+let config: IBubbleConfig | null = null;
 
-  get(): IBubbleConfig {
-    if (!this.config) {
+export default class BubbleConfig {
+  static get(): IBubbleConfig {
+    if (!config) {
       throw new NotIntializedError();
     }
-    return this.config;
+    return config;
   }
 
-  set(config: SetConfig) {
-    this.config = {
+  static set(setConfig: SetConfig) {
+    config = {
       ...DEFAULT_CONFIG,
-      ...config,
+      ...setConfig,
     };
   }
 
-  reset() {
-    this.config = null;
+  static reset() {
+    config = null;
   }
 
   /** Base URL for bubble API */
-  get baseUrl(): string {
-    const { app, appVersion, domain, apiVersion } = this.get();
+  static get baseUrl(): string {
+    const { app, appVersion, domain, apiVersion } = BubbleConfig.get();
     const versionPart = appVersion ? `/${appVersion}` : "";
     return `https://${app}.${domain}${versionPart}/api/${apiVersion}`;
   }
 
   /** Request headers for all Bubble requests */
-  get headers(): { Authorization: string } {
-    const { apiKey } = this.get();
+  static get headers(): { Authorization: string } {
+    const { apiKey } = BubbleConfig.get();
     return {
       Authorization: `Bearer ${apiKey}`,
     };
   }
 }
-
-const BubbleConfig = new BubbleConfigManager();
-export default BubbleConfig;

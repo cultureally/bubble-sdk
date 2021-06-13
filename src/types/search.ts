@@ -20,7 +20,7 @@ export type ConstraintField<T extends BaseDataType> = keyof Omit<
 export interface Constraint<T extends BaseDataType> {
   key: ConstraintField<T>;
   constraint_type: ConstraintType;
-  value?: (string | number)[];
+  value?: (string | number) | (string | number)[];
 }
 
 export type ConstraintType =
