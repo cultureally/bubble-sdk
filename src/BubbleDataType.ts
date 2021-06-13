@@ -96,7 +96,7 @@ export default abstract class BubbleDataType implements BaseDataType {
     let results: T[] = [];
     while (true) {
       // @ts-expect-error
-      const res = await (this as typeof T).search({
+      const res: SearchResponse<T>["response"] = await this.search({
         ...config,
         cursor,
       });
@@ -113,8 +113,10 @@ export default abstract class BubbleDataType implements BaseDataType {
     config: Omit<SearchConfig<T>, "cursor">
   ): Promise<T | null> {
     // @ts-expect-error
-    const searchResults = await this.search<T>(config);
-    return searchResults.response.results[0] || null;
+    const searchResults: SearchResponse<T>["response"] = await this.search<T>(
+      config
+    );
+    return searchResults.results[0] || null;
   }
 
   async save(): Promise<void> {
