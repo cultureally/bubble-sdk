@@ -90,20 +90,27 @@ export default abstract class BubbleDataType implements BaseDataType {
   /** Page through all bubble API results to get all objects matching constraints */
   static async getAll<T extends BubbleDataType>(
     this: CustomDataClass<T>,
-    config: Omit<SearchConfig<T>, "cursor">
+    config: Omit<SearchConfig<T>, "cursor">,
+    callback?: (result: SearchResponse<T>["response"]) => Promise<void>
   ): Promise<T[]> {
     let cursor = 0;
     let results: T[] = [];
+    let callbackPromises: Promise<void>[] = [];
     while (true) {
       // @ts-expect-error
       const res: SearchResponse<T>["response"] = await this.search({
         ...config,
         cursor,
       });
+      // providing callback allows you to execute on results as they come in
+      if (callback) {
+        callbackPromises.push(callback(res));
+      }
       results = results.concat(res.results);
       if (res.remaining <= 0) break;
       cursor++;
     }
+    await Promise.all(callbackPromises);
     return results;
   }
 
