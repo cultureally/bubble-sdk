@@ -93,16 +93,11 @@ export default abstract class BubbleDataType implements BaseDataType {
   }
 
   /** Page through all bubble API results to get all objects matching constraints */
-  static async getAll<
-    T extends BubbleDataType,
-    TCallback extends
-      | undefined
-      | ((result: SearchResponse<T>["response"]) => Promise<void>)
-  >(
+  static async getAll<T extends BubbleDataType>(
     this: CustomDataClass<T>,
     config: Omit<SearchConfig<T>, "cursor"> = { constraints: [] },
-    callback?: TCallback
-  ): Promise<TCallback extends undefined ? T[] : void> {
+    callback?: (result: SearchResponse<T>["response"]) => Promise<void>
+  ): Promise<T[]> {
     let cursor = 0;
     let results: T[] = [];
     let callbackPromises: Promise<void>[] = [];
@@ -119,11 +114,10 @@ export default abstract class BubbleDataType implements BaseDataType {
         results = results.concat(res.results);
       }
       if (res.remaining <= 0) break;
-      cursor++;
+      cursor += res.count;
     }
     await Promise.all(callbackPromises);
-    // @ts-expect-error
-    return typeof callback === "undefined" ? results : undefined;
+    return results;
   }
 
   /** Get the first instance matching the search query. */
