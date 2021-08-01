@@ -40,7 +40,7 @@ export type ConstraintType =
   | "not empty";
 
 export interface SearchConfig<T extends BubbleDataType> {
-  constraints?: Constraint<T>[];
+  constraints: Constraint<T>[];
   sort?: SortConfig<T>;
   cursor?: number;
 }

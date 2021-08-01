@@ -1,4 +1,4 @@
-import axios, { AxiosResponse } from "axios";
+import axios, { AxiosError, AxiosResponse } from "axios";
 import BubbleConfig from "./BubbleConfig";
 import { BaseDataType, SearchConfig } from "./types/search";
 import {
@@ -28,10 +28,11 @@ export default abstract class BubbleDataType implements BaseDataType {
   ): Promise<T> {
     const { objectUrl } = new this({});
     const { headers } = BubbleConfig;
-    const res: AxiosResponse<GetByIDResponse> = await axios.get(
-      `${objectUrl}/${id}`,
-      { headers }
-    );
+    const res: AxiosResponse<GetByIDResponse> = await axios
+      .get(`${objectUrl}/${id}`, { headers })
+      .catch((err) => {
+        throw new BubbleError(err);
+      });
     if (!res.data) throw new Error(`Unexpected response from bubble: no body`);
     return new this(res.data.response);
   }
@@ -44,11 +45,11 @@ export default abstract class BubbleDataType implements BaseDataType {
     const { objectUrl } = new this({});
     const { headers } = BubbleConfig;
 
-    const res: AxiosResponse<CreateResponse> = await axios.post(
-      `${objectUrl}/`,
-      data,
-      { headers }
-    );
+    const res: AxiosResponse<CreateResponse> = await axios
+      .post(`${objectUrl}/`, data, { headers })
+      .catch((err) => {
+        throw new BubbleError(err);
+      });
     if (!res.data) throw new Error(`Unexpected response from bubble: no body`);
     if (res.data.status !== "success" || !res.data.id) {
       throw new Error(`create request failed with status: ${res.data.status}`);
@@ -62,20 +63,24 @@ export default abstract class BubbleDataType implements BaseDataType {
   /** Search all objects of the type */
   static async search<T extends BubbleDataType>(
     this: CustomDataClass<T>,
-    config: SearchConfig<T> = {}
+    config: SearchConfig<T> = { constraints: [] }
   ): Promise<SearchResponse<T>["response"]> {
     const { objectUrl } = new this({});
     const { headers } = BubbleConfig;
 
-    const res: AxiosResponse<SearchResponse<T>> = await axios.get(objectUrl, {
-      headers,
-      params: {
-        constraints: JSON.stringify(config.constraints || []),
-        sort_field: config.sort?.sort_field,
-        descending: config.sort?.descending ? "true" : false,
-        cursor: config.cursor,
-      },
-    });
+    const res: AxiosResponse<SearchResponse<T>> = await axios
+      .get(objectUrl, {
+        headers,
+        params: {
+          constraints: JSON.stringify(config.constraints || []),
+          sort_field: config.sort?.sort_field,
+          descending: config.sort?.descending ? "true" : false,
+          cursor: config.cursor,
+        },
+      })
+      .catch((err) => {
+        throw new BubbleError(err);
+      });
     if (!res.data?.response) {
       throw new Error("search request failed");
     }
@@ -88,11 +93,16 @@ export default abstract class BubbleDataType implements BaseDataType {
   }
 
   /** Page through all bubble API results to get all objects matching constraints */
-  static async getAll<T extends BubbleDataType>(
+  static async getAll<
+    T extends BubbleDataType,
+    TCallback extends
+      | undefined
+      | ((result: SearchResponse<T>["response"]) => Promise<void>)
+  >(
     this: CustomDataClass<T>,
-    config: Omit<SearchConfig<T>, "cursor">,
-    callback?: (result: SearchResponse<T>["response"]) => Promise<void>
-  ): Promise<T[]> {
+    config: Omit<SearchConfig<T>, "cursor"> = { constraints: [] },
+    callback?: TCallback
+  ): Promise<TCallback extends undefined ? T[] : void> {
     let cursor = 0;
     let results: T[] = [];
     let callbackPromises: Promise<void>[] = [];
@@ -105,13 +115,15 @@ export default abstract class BubbleDataType implements BaseDataType {
       // providing callback allows you to execute on results as they come in
       if (callback) {
         callbackPromises.push(callback(res));
+      } else {
+        results = results.concat(res.results);
       }
-      results = results.concat(res.results);
       if (res.remaining <= 0) break;
       cursor++;
     }
     await Promise.all(callbackPromises);
-    return results;
+    // @ts-expect-error
+    return typeof callback === "undefined" ? results : undefined;
   }
 
   /** Get the first instance matching the search query. */
@@ -134,13 +146,24 @@ export default abstract class BubbleDataType implements BaseDataType {
         "Cannot call save on a BubbleDataType without an _id value."
       );
     }
-    await axios.patch(`${objectUrl}/${this._id}`, Object.assign({}, this), {
-      headers,
-    });
+    await axios
+      .patch(`${objectUrl}/${this._id}`, Object.assign({}, this), {
+        headers,
+      })
+      .catch((err) => {
+        throw new BubbleError(err);
+      });
   }
 
   private get objectUrl(): string {
     return `${BubbleConfig.baseUrl}/obj/${this.type}`;
+  }
+}
+
+export class BubbleError extends Error {
+  constructor(err: AxiosError) {
+    super(`Bubble request failed: ${JSON.stringify(err.response?.data)}`);
+    this.name = "BubbleError";
   }
 }
 
